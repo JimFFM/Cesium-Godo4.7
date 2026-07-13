@@ -45,15 +45,9 @@ def configure():
 def compile():
     print("Compiling Cesium Native...")
     if os.name == OS_WIN:
-        # execute MSBuild
-        solutionName: str = "cesium-native.sln"
-        msbuildPath: str = find_ms_build()
-        if msbuildPath == '':
-            print(
-                "Could not find MSBuild.exe, make sure to have Visual Studio installed", file=sys.stderr)
-            return
-        releaseConfig = "/property:Configuration=%s" % buildConfig
-        result = subprocess.run([msbuildPath, solutionName, releaseConfig])
+        # Use CMake's generated VS build so the wrapper does not depend on
+        # a specific solution filename.
+        result = subprocess.run(["cmake", "--build", ".", "--config", buildConfig])
         if result.returncode != 0:
             print("Error building Cesium Native: %s" % str(result.stderr))
         return

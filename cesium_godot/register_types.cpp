@@ -15,7 +15,7 @@
 #include "Utils/CesiumGDAssetBuilder.h"
 #include "Utils/TokenTroubleShooting.h"		
 #include "godot_cpp/classes/engine.hpp"
-#include <cstdio>
+#include "godot_cpp/variant/utility_functions.hpp"
 
 #if defined(CESIUM_GD_EXT)
 #include <gdextension_interface.h>
@@ -55,12 +55,11 @@ void uninitialize_cesium_godot_module(ModuleInitializationLevel p_level) {
 
 extern "C" {
 	GDExtensionBool GDE_EXPORT test_cesium_init(GDExtensionInterfaceGetProcAddress p_get_proc_address, const GDExtensionClassLibraryPtr p_library, GDExtensionInitialization* r_initialization){
-		printf("%s", "Initialization of GDExtension");
 		godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
 		init_obj.register_initializer(initialize_cesium_godot_module);
 		init_obj.register_terminator(uninitialize_cesium_godot_module);
 		init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SCENE);
 		return init_obj.init();
-  }
+ 	}
 }
 

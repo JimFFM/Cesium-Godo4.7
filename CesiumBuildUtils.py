@@ -325,18 +325,10 @@ def build_native_macos():
 
 
 def build_native_win():
-    # execute MSBuild
-    buildConfig: str = RELEASE_CONFIG
-    solutionName: str = "cesium-native.sln"
-    msbuildPath: str = find_ms_build()
-    if msbuildPath == "":
-        print(
-            "Could not find MSBuild.exe, make sure to have Visual Studio installed",
-            file=sys.stderr,
-        )
-        return
-    releaseConfig = "/property:Configuration=%s" % buildConfig
-    return subprocess.run([msbuildPath, solutionName, releaseConfig])
+    # Use CMake's generated VS build so we don't depend on a specific
+    # solution filename. This keeps the wrapper aligned with the
+    # currently generated cesium-native build tree.
+    return subprocess.run(["cmake", "--build", ".", "--config", RELEASE_CONFIG])
 
 
 def clean_cesium_definitions():

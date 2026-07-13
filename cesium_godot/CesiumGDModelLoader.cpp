@@ -426,7 +426,9 @@ Error CesiumGDModelLoader::copy_material_properties(const CesiumGltf::Material& 
 {
 	set_colors_and_texture(cesiumMaterial, godotMaterial, modelReference);
 
-	BaseMaterial3D::CullMode cullMode = cesiumMaterial.doubleSided ? BaseMaterial3D::CULL_DISABLED : BaseMaterial3D::CULL_FRONT;
+	// glTF's default winding is front-facing from the outside. Culling front
+	// faces makes ordinary one-sided Cesium tiles disappear in Godot.
+	BaseMaterial3D::CullMode cullMode = cesiumMaterial.doubleSided ? BaseMaterial3D::CULL_DISABLED : BaseMaterial3D::CULL_BACK;
 	BaseMaterial3D::Transparency alphaMode;
 
 	if (cesiumMaterial.alphaMode == CesiumGltf::Material::AlphaMode::OPAQUE) {
