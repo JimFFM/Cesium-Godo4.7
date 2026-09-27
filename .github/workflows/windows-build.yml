@@ -12,16 +12,12 @@ permissions:
 
 env:
   GIT_LFS_SKIP_SMUDGE: "1"
+  VCPKG_COMMIT: dbe35ceb30c688bf72e952ab23778e009a578f18
 
 jobs:
-  build-extension:
-    name: Build Godot3DTiles (${{ matrix.precision }} Precision)
+  double:
+    name: Build Godot3DTiles Extension (Double Precision)
     runs-on: windows-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        precision: [single, double]
 
     steps:
     - name: Checkout repository
@@ -33,8 +29,8 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: microsoft/vcpkg
-        ref: dbe35ceb30c688bf72e952ab23778e009a578f18
-        path: .ezvcpkg/${{ matrix.precision }}-dbe35ceb30c688bf72e952ab23778e009a578f18
+        ref: ${{ env.VCPKG_COMMIT }}
+        path: .ezvcpkg/double-${{ env.VCPKG_COMMIT }}
         fetch-depth: 1
         persist-credentials: false
 
@@ -54,11 +50,10 @@ jobs:
     - name: Pre-setup vcpkg and globally disable MSYS2 pkgconfig fixups
       shell: powershell
       run: |
-        $vcpkgCommit = "dbe35ceb30c688bf72e952ab23778e009a578f18"
-        $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".ezvcpkg\${{ matrix.precision }}-$vcpkgCommit"
+        $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".ezvcpkg\double-$env:VCPKG_COMMIT"
         $vcpkgRoot = Join-Path $env:USERPROFILE ".ezvcpkg"
-        $vcpkgDir = Join-Path $vcpkgRoot "${{ matrix.precision }}-$vcpkgCommit"
-        $vcpkgArchive = Join-Path $env:RUNNER_TEMP "${{ matrix.precision }}-$vcpkgCommit.tar"
+        $vcpkgDir = Join-Path $vcpkgRoot "double-$env:VCPKG_COMMIT"
+        $vcpkgArchive = Join-Path $env:RUNNER_TEMP "double-$env:VCPKG_COMMIT.tar"
         New-Item -ItemType Directory -Force -Path $vcpkgRoot | Out-Null
 
         if (-not (Test-Path $workspaceVcpkgDir)) {
@@ -75,12 +70,22 @@ jobs:
         }
 
         tar -cf $vcpkgArchive -C $workspaceVcpkgDir .
+        $archiveExitCode = $LASTEXITCODE
+        if ($archiveExitCode -ne 0) {
+            throw "tar archive failed with exit code $archiveExitCode"
+        }
+
         tar -xf $vcpkgArchive -C $vcpkgDir
+        $extractExitCode = $LASTEXITCODE
+        if ($extractExitCode -ne 0) {
+            throw "tar extract failed with exit code $extractExitCode"
+        }
+        $global:LASTEXITCODE = 0
 
         & "$env:GITHUB_WORKSPACE\.github\scripts\disable-vcpkg-fixup-pkgconfig.ps1" -VcpkgDir $vcpkgDir
 
-    - name: Build Extension (${{ matrix.precision }} Precision)
-      run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true precision=${{ matrix.precision }}
+    - name: Build Extension (Double Precision)
+      run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true precision=double
 
     - name: Verify Build Output
       run: if ((gci godot3dtiles/addons/cesium_godot/lib -Filter "*.dll").Count -lt 1) { exit 1 }
@@ -88,5 +93,87 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: godot3dtiles-${{ matrix.precision }}-precision-dev
+        name: godot3dtiles-double-precision-dev
+        path: godot3dtiles/
+
+  single:
+    name: Build Godot3DTiles Extension (Single Precision)
+    runs-on: windows-latest
+    needs: double
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Checkout pinned vcpkg source
+      uses: actions/checkout@v4
+      with:
+        repository: microsoft/vcpkg
+        ref: ${{ env.VCPKG_COMMIT }}
+        path: .ezvcpkg/single-${{ env.VCPKG_COMMIT }}
+        fetch-depth: 1
+        persist-credentials: false
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install SCons
+      run: pip install scons
+
+    - name: Setup MSVC 2022
+      uses: microsoft/setup-msbuild@v1.3
+      with:
+        vs-version: '17.7'
+
+    - name: Pre-setup vcpkg and globally disable MSYS2 pkgconfig fixups
+      shell: powershell
+      run: |
+        $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".ezvcpkg\single-$env:VCPKG_COMMIT"
+        $vcpkgRoot = Join-Path $env:USERPROFILE ".ezvcpkg"
+        $vcpkgDir = Join-Path $vcpkgRoot "single-$env:VCPKG_COMMIT"
+        $vcpkgArchive = Join-Path $env:RUNNER_TEMP "single-$env:VCPKG_COMMIT.tar"
+        New-Item -ItemType Directory -Force -Path $vcpkgRoot | Out-Null
+
+        if (-not (Test-Path $workspaceVcpkgDir)) {
+            throw "Pinned vcpkg checkout not found at expected path: $workspaceVcpkgDir"
+        }
+
+        if (Test-Path $vcpkgDir) {
+            Remove-Item -Recurse -Force $vcpkgDir
+        }
+
+        New-Item -ItemType Directory -Force -Path $vcpkgDir | Out-Null
+        if (Test-Path $vcpkgArchive) {
+            Remove-Item -Force $vcpkgArchive
+        }
+
+        tar -cf $vcpkgArchive -C $workspaceVcpkgDir .
+        $archiveExitCode = $LASTEXITCODE
+        if ($archiveExitCode -ne 0) {
+            throw "tar archive failed with exit code $archiveExitCode"
+        }
+
+        tar -xf $vcpkgArchive -C $vcpkgDir
+        $extractExitCode = $LASTEXITCODE
+        if ($extractExitCode -ne 0) {
+            throw "tar extract failed with exit code $extractExitCode"
+        }
+        $global:LASTEXITCODE = 0
+
+        & "$env:GITHUB_WORKSPACE\.github\scripts\disable-vcpkg-fixup-pkgconfig.ps1" -VcpkgDir $vcpkgDir
+
+    - name: Build Extension (Single Precision)
+      run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true precision=single
+
+    - name: Verify Build Output
+      run: if ((gci godot3dtiles/addons/cesium_godot/lib -Filter "*.dll").Count -lt 1) { exit 1 }
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: godot3dtiles-single-precision-dev
         path: godot3dtiles/
