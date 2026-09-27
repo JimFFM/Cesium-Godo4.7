@@ -74,7 +74,7 @@ jobs:
             Remove-Item -Force $vcpkgArchive
         }
 
-        git -C $workspaceVcpkgDir archive --format=tar HEAD --output=$vcpkgArchive
+        tar -cf $vcpkgArchive -C $workspaceVcpkgDir .
         tar -xf $vcpkgArchive -C $vcpkgDir
 
         & "$env:GITHUB_WORKSPACE\.github\scripts\disable-vcpkg-fixup-pkgconfig.ps1" -VcpkgDir $vcpkgDir
