@@ -48,7 +48,7 @@ jobs:
       with:
         vs-version: '17.7'
 
-    - name: Pre-setup vcpkg and patch fmt port to skip pkgconfig fixup
+    - name: Pre-setup vcpkg and globally disable pkgconfig fixup
       shell: powershell
       run: |
         $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".copilot-vcpkg\$env:VCPKG_COMMIT"
@@ -103,7 +103,7 @@ jobs:
       with:
         vs-version: '17.7'
 
-    - name: Pre-setup vcpkg and patch fmt port to skip pkgconfig fixup
+    - name: Pre-setup vcpkg and globally disable pkgconfig fixup
       shell: powershell
       run: |
         $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".copilot-vcpkg\$env:VCPKG_COMMIT"

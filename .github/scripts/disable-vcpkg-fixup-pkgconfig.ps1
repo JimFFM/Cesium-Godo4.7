@@ -3,35 +3,25 @@ param(
     [string]$VcpkgDir
 )
 
-$fmtPortfile = Join-Path $VcpkgDir "ports/fmt/portfile.cmake"
+$pkgConfigScript = Join-Path $VcpkgDir "scripts/cmake/vcpkg_fixup_pkgconfig.cmake"
 
-if (-not (Test-Path $fmtPortfile)) {
-    throw "fmt portfile not found at expected path: $fmtPortfile"
+if (-not (Test-Path $pkgConfigScript)) {
+    throw "vcpkg_fixup_pkgconfig.cmake not found at expected path: $pkgConfigScript"
 }
 
-Write-Host "Patching fmt portfile to skip vcpkg_fixup_pkgconfig(): $fmtPortfile"
+Write-Host "Patching vcpkg_fixup_pkgconfig() to a no-op: $pkgConfigScript"
 
-$portfileBytes = [System.IO.File]::ReadAllBytes($fmtPortfile)
-$hasUtf8Bom = $portfileBytes.Length -ge 3 -and $portfileBytes[0] -eq 0xEF -and $portfileBytes[1] -eq 0xBB -and $portfileBytes[2] -eq 0xBF
+$scriptBytes = [System.IO.File]::ReadAllBytes($pkgConfigScript)
+$hasUtf8Bom = $scriptBytes.Length -ge 3 -and $scriptBytes[0] -eq 0xEF -and $scriptBytes[1] -eq 0xBB -and $scriptBytes[2] -eq 0xBF
 $encoding = [System.Text.UTF8Encoding]::new($hasUtf8Bom)
-$portfileContent = $encoding.GetString($portfileBytes)
+$scriptContent = $encoding.GetString($scriptBytes)
+$replacementBlock = "function(vcpkg_fixup_pkgconfig)`nendfunction()`n"
 
-if ($portfileContent.Contains("# vcpkg_fixup_pkgconfig() disabled in CI to avoid MSYS2 pkgconfig acquisition")) {
-    Write-Host "fmt portfile already patched."
+if ($scriptContent -eq $replacementBlock -or $scriptContent -eq $replacementBlock.Replace("`n", "`r`n")) {
+    Write-Host "vcpkg_fixup_pkgconfig.cmake already patched."
     return
 }
 
-$updatedContent = [System.Text.RegularExpressions.Regex]::Replace(
-    $portfileContent,
-    '(?m)^(\s*)vcpkg_fixup_pkgconfig\(\)(\r?\n?)',
-    '$1# vcpkg_fixup_pkgconfig() disabled in CI to avoid MSYS2 pkgconfig acquisition$2',
-    1
-)
+[System.IO.File]::WriteAllText($pkgConfigScript, $replacementBlock, [System.Text.UTF8Encoding]::new($false))
 
-if ($updatedContent -eq $portfileContent) {
-    throw "Failed to locate vcpkg_fixup_pkgconfig() in $fmtPortfile"
-}
-
-[System.IO.File]::WriteAllText($fmtPortfile, $updatedContent, $encoding)
-
-Write-Host "Successfully patched fmt portfile."
+Write-Host "Successfully patched vcpkg_fixup_pkgconfig.cmake."

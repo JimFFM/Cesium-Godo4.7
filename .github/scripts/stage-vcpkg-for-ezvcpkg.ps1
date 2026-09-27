@@ -28,7 +28,7 @@ try {
 
     Copy-Item -LiteralPath $SourceVcpkgDir -Destination $targetRoot -Recurse -Force
 
-    if (-not (Test-Path (Join-Path $TargetVcpkgDir "ports/fmt/portfile.cmake"))) {
+    if (-not (Test-Path (Join-Path $TargetVcpkgDir "scripts/cmake/vcpkg_fixup_pkgconfig.cmake"))) {
         throw "Failed to stage vcpkg tree at expected path: $TargetVcpkgDir"
     }
 
