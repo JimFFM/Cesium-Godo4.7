@@ -295,12 +295,13 @@ def compile_native(argumentsDict):
 
     print("Building Cesium Native, this might take a few minutes...")
     configure_native(argumentsDict)
+    nativeBuildDirectory = os.getcwd()
     print("Compiling Cesium Native...")
 
     # TODO: Test if we can just do cmake --build for all platforms
     result = None
     if os.name == OS_WIN:
-        result = build_native_win()
+        result = build_native_win(nativeBuildDirectory)
     elif sys.platform == PLATFORM_MACOS:
         result = build_native_macos()
     elif os.name == OS_LINUX:
@@ -325,9 +326,9 @@ def build_native_macos():
     return subprocess.run(["cmake", "--build", "."])
 
 
-def build_native_win():
+def build_native_win(buildDirectory: str):
     buildConfig: str = RELEASE_CONFIG
-    return subprocess.run(["cmake", "--build", ".", "--config", buildConfig])
+    return subprocess.run(["cmake", "--build", buildDirectory, "--config", buildConfig])
 
 
 def clean_cesium_definitions():
