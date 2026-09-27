@@ -3,19 +3,21 @@ param(
     [string]$VcpkgDir
 )
 
-$pkgConfigScript = Join-Path $VcpkgDir "scripts/cmake/vcpkg_fixup_pkgconfig.cmake"
+$fmtPortfile = Join-Path $VcpkgDir "ports/fmt/portfile.cmake"
 
-if (-not (Test-Path $pkgConfigScript)) {
-    throw "vcpkg_fixup_pkgconfig.cmake not found at expected path: $pkgConfigScript"
+if (-not (Test-Path $fmtPortfile)) {
+    throw "fmt portfile not found at expected path: $fmtPortfile"
 }
 
-Write-Host "Globally bypassing vcpkg_fixup_pkgconfig in $pkgConfigScript..."
+Write-Host "Patching fmt portfile to skip vcpkg_fixup_pkgconfig(): $fmtPortfile"
 
-$overrideFunction = @'
-function(vcpkg_fixup_pkgconfig)
-endfunction()
-'@
+$portfileContent = Get-Content -Path $fmtPortfile -Raw
+$updatedContent = $portfileContent -replace '(?m)^(\s*)vcpkg_fixup_pkgconfig\(\)\s*$', '$1# Disabled in CI to avoid MSYS2 pkgconfig acquisition'
 
-Set-Content -Path $pkgConfigScript -Value $overrideFunction -Encoding utf8
+if ($updatedContent -eq $portfileContent) {
+    throw "Failed to locate vcpkg_fixup_pkgconfig() in $fmtPortfile"
+}
 
-Write-Host "Successfully disabled pkgconfig fixup globally!"
+Set-Content -Path $fmtPortfile -Value $updatedContent -Encoding utf8
+
+Write-Host "Successfully patched fmt portfile."
