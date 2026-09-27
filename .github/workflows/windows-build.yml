@@ -68,7 +68,8 @@ jobs:
             Remove-Item -Recurse -Force $vcpkgDir
         }
 
-        Copy-Item -Path $workspaceVcpkgDir -Destination $vcpkgDir -Recurse
+        New-Item -ItemType Directory -Force -Path $vcpkgDir | Out-Null
+        Get-ChildItem -Path $workspaceVcpkgDir -Force | Copy-Item -Destination $vcpkgDir -Recurse -Force
 
         & "$env:GITHUB_WORKSPACE\.github\scripts\disable-vcpkg-fixup-pkgconfig.ps1" -VcpkgDir $vcpkgDir
 
