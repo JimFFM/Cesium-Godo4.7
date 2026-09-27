@@ -48,6 +48,7 @@ jobs:
           git -C $nativeDir clean -fdx
           git -C $nativeDir fetch origin $nativeCommit
           git -C $nativeDir -c advice.detachedHead=false checkout $nativeCommit
+          git -C $nativeDir submodule sync --recursive
           git -C $nativeDir submodule update --init --recursive --force
 
           $cmakeFile = Join-Path $nativeDir "CMakeLists.txt"
