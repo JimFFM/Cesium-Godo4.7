@@ -61,17 +61,7 @@ jobs:
         git fetch --depth 1 origin $vcpkgCommit
         git checkout FETCH_HEAD
 
-        # Globally neutralize vcpkg_fixup_pkgconfig to prevent ANY package from triggering MSYS2 downloads
-        $pkgConfigScript = "$vcpkgDir\scripts\cmake\vcpkg_fixup_pkgconfig.cmake"
-
-        if (Test-Path $pkgConfigScript) {
-            Write-Host "Globally bypassing vcpkg_fixup_pkgconfig in $pkgConfigScript..."
-            $overrideFunction = "function(vcpkg_fixup_pkgconfig)`nendfunction()`n"
-            Set-Content -Path $pkgConfigScript -Value $overrideFunction
-            Write-Host "Successfully disabled pkgconfig fixup globally!"
-        } else {
-            throw "vcpkg_fixup_pkgconfig.cmake not found at expected path: $pkgConfigScript"
-        }
+        & "$env:GITHUB_WORKSPACE\.github\scripts\disable-vcpkg-fixup-pkgconfig.ps1" -VcpkgDir $vcpkgDir
 
     - name: Build Extension (${{ matrix.precision }} Precision)
       run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true precision=${{ matrix.precision }}
