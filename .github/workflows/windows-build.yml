@@ -58,6 +58,7 @@ jobs:
         $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".ezvcpkg\${{ matrix.precision }}-$vcpkgCommit"
         $vcpkgRoot = Join-Path $env:USERPROFILE ".ezvcpkg"
         $vcpkgDir = Join-Path $vcpkgRoot "${{ matrix.precision }}-$vcpkgCommit"
+        $vcpkgArchive = Join-Path $env:RUNNER_TEMP "${{ matrix.precision }}-$vcpkgCommit.tar"
         New-Item -ItemType Directory -Force -Path $vcpkgRoot | Out-Null
 
         if (-not (Test-Path $workspaceVcpkgDir)) {
@@ -69,12 +70,12 @@ jobs:
         }
 
         New-Item -ItemType Directory -Force -Path $vcpkgDir | Out-Null
-        robocopy $workspaceVcpkgDir $vcpkgDir /E /COPY:DAT /R:3 /W:5 /NFL /NDL /NJH /NJS /NP
-        $robocopyExitCode = $LASTEXITCODE
-        if ($robocopyExitCode -gt 7) {
-            throw "robocopy failed with exit code $robocopyExitCode"
+        if (Test-Path $vcpkgArchive) {
+            Remove-Item -Force $vcpkgArchive
         }
-        $global:LASTEXITCODE = 0
+
+        git -C $workspaceVcpkgDir archive --format=tar HEAD --output=$vcpkgArchive
+        tar -xf $vcpkgArchive -C $vcpkgDir
 
         & "$env:GITHUB_WORKSPACE\.github\scripts\disable-vcpkg-fixup-pkgconfig.ps1" -VcpkgDir $vcpkgDir
 
