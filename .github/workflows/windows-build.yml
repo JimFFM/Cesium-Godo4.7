@@ -1,4 +1,4 @@
-name: Windows Double & Single Precision Builds
+name: Windows Double & Single Precision Builds Sep2026-v7
 
 on:
   push:
@@ -11,18 +11,25 @@ env:
   GIT_LFS_SKIP_SMUDGE: "1"
 
 jobs:
-  double:
-    name: Build Godot3DTiles Extension (Double Precision)
+  build-extension:
+    name: Build Godot3DTiles (${{ matrix.precision }} Precision)
     runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        precision: [single, double]
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
-    - name: Set up Python 3.8
+    - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
-        python-version: '3.8'
+        python-version: '3.12'
 
     - name: Install SCons
       run: pip install scons
@@ -31,45 +38,34 @@ jobs:
       uses: microsoft/setup-msbuild@v1.3
       with:
         vs-version: '17.7'
-        include-optional: true
 
-    - name: Build Extension (Double Precision Debug)
-      run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true precision=double
+    - name: Pre-setup vcpkg and globally disable MSYS2 pkgconfig fixups
+      shell: powershell
+      run: |
+        $vcpkgDir = "D:\.ezvcpkg\dbe35ceb30c688bf72e952ab23778e009a578f18"
+        New-Item -ItemType Directory -Force -Path $vcpkgDir
 
-    - name: Verify Build Output
-      run: if ((gci godot3dtiles/addons/cesium_godot/lib -Filter "*.dll").Count -lt 1) { exit 1 }
+        Write-Host "Cloning official vcpkg repository..."
+        git clone https://github.com/microsoft/vcpkg.git $vcpkgDir
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: godot3dtiles-double-precision-dev
-        path: godot3dtiles/
+        Set-Location $vcpkgDir
+        Write-Host "Checking out expected commit: dbe35ceb30c688bf72e952ab23778e009a578f18"
+        git checkout dbe35ceb30c688bf72e952ab23778e009a578f18
 
-  single:
-    name: Build Godot3DTiles Extension (Single Precision)
-    runs-on: windows-latest
-    needs: double
+        # Globally neutralize vcpkg_fixup_pkgconfig to prevent ANY package from triggering MSYS2 downloads
+        $pkgConfigScript = "$vcpkgDir\scripts\cmake\vcpkg_fixup_pkgconfig.cmake"
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+        if (Test-Path $pkgConfigScript) {
+            Write-Host "Globally bypassing vcpkg_fixup_pkgconfig in $pkgConfigScript..."
+            $overrideFunction = "function(vcpkg_fixup_pkgconfig)`nendfunction()`n"
+            Set-Content -Path $pkgConfigScript -Value $overrideFunction
+            Write-Host "Successfully disabled pkgconfig fixup globally!"
+        } else {
+            Write-Warning "vcpkg_fixup_pkgconfig.cmake not found at expected path."
+        }
 
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.8'
-
-    - name: Install SCons
-      run: pip install scons
-
-    - name: Setup MSVC 2022
-      uses: microsoft/setup-msbuild@v1.3
-      with:
-        vs-version: '17.7'
-        include-optional: true
-
-    - name: Build Extension (Single Precision Debug)
-      run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true
+    - name: Build Extension (${{ matrix.precision }} Precision)
+      run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true precision=${{ matrix.precision }}
 
     - name: Verify Build Output
       run: if ((gci godot3dtiles/addons/cesium_godot/lib -Filter "*.dll").Count -lt 1) { exit 1 }
@@ -77,5 +73,5 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: godot3dtiles-single-precision-dev
+        name: godot3dtiles-${{ matrix.precision }}-precision-dev
         path: godot3dtiles/
