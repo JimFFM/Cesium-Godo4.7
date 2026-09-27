@@ -30,7 +30,7 @@ jobs:
       with:
         repository: microsoft/vcpkg
         ref: ${{ env.VCPKG_COMMIT }}
-        path: .ezvcpkg/double-${{ env.VCPKG_COMMIT }}
+        path: .ezvcpkg/${{ env.VCPKG_COMMIT }}
         fetch-depth: 1
         persist-credentials: false
 
@@ -50,10 +50,11 @@ jobs:
     - name: Pre-setup vcpkg and globally disable MSYS2 pkgconfig fixups
       shell: powershell
       run: |
-        $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".ezvcpkg\double-$env:VCPKG_COMMIT"
-        $vcpkgRoot = Join-Path $env:USERPROFILE ".ezvcpkg"
-        $vcpkgDir = Join-Path $vcpkgRoot "double-$env:VCPKG_COMMIT"
-        $vcpkgArchive = Join-Path $env:RUNNER_TEMP "double-$env:VCPKG_COMMIT.tar"
+        $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".ezvcpkg\$env:VCPKG_COMMIT"
+        $driveRoot = [System.IO.Path]::GetPathRoot($env:GITHUB_WORKSPACE)
+        $vcpkgRoot = Join-Path $driveRoot ".ezvcpkg"
+        $vcpkgDir = Join-Path $vcpkgRoot $env:VCPKG_COMMIT
+        $vcpkgArchive = Join-Path $env:RUNNER_TEMP "vcpkg-$env:VCPKG_COMMIT.tar"
         New-Item -ItemType Directory -Force -Path $vcpkgRoot | Out-Null
 
         if (-not (Test-Path $workspaceVcpkgDir)) {
@@ -112,7 +113,7 @@ jobs:
       with:
         repository: microsoft/vcpkg
         ref: ${{ env.VCPKG_COMMIT }}
-        path: .ezvcpkg/single-${{ env.VCPKG_COMMIT }}
+        path: .ezvcpkg/${{ env.VCPKG_COMMIT }}
         fetch-depth: 1
         persist-credentials: false
 
@@ -132,10 +133,11 @@ jobs:
     - name: Pre-setup vcpkg and globally disable MSYS2 pkgconfig fixups
       shell: powershell
       run: |
-        $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".ezvcpkg\single-$env:VCPKG_COMMIT"
-        $vcpkgRoot = Join-Path $env:USERPROFILE ".ezvcpkg"
-        $vcpkgDir = Join-Path $vcpkgRoot "single-$env:VCPKG_COMMIT"
-        $vcpkgArchive = Join-Path $env:RUNNER_TEMP "single-$env:VCPKG_COMMIT.tar"
+        $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".ezvcpkg\$env:VCPKG_COMMIT"
+        $driveRoot = [System.IO.Path]::GetPathRoot($env:GITHUB_WORKSPACE)
+        $vcpkgRoot = Join-Path $driveRoot ".ezvcpkg"
+        $vcpkgDir = Join-Path $vcpkgRoot $env:VCPKG_COMMIT
+        $vcpkgArchive = Join-Path $env:RUNNER_TEMP "vcpkg-$env:VCPKG_COMMIT.tar"
         New-Item -ItemType Directory -Force -Path $vcpkgRoot | Out-Null
 
         if (-not (Test-Path $workspaceVcpkgDir)) {
