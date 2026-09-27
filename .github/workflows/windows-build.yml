@@ -45,7 +45,9 @@ jobs:
     - name: Pre-setup vcpkg and globally disable MSYS2 pkgconfig fixups
       shell: powershell
       run: |
-        $vcpkgDir = "D:\.ezvcpkg\dbe35ceb30c688bf72e952ab23778e009a578f18"
+        $vcpkgRoot = Join-Path $env:USERPROFILE ".ezvcpkg"
+        $vcpkgDir = Join-Path $vcpkgRoot "${{ matrix.precision }}-dbe35ceb30c688bf72e952ab23778e009a578f18"
+        New-Item -ItemType Directory -Force -Path $vcpkgRoot | Out-Null
 
         Write-Host "Cloning official vcpkg repository..."
         git clone https://github.com/microsoft/vcpkg.git $vcpkgDir
