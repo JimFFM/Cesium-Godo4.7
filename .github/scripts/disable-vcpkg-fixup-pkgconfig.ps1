@@ -16,7 +16,7 @@ $hasUtf8Bom = $portfileBytes.Length -ge 3 -and $portfileBytes[0] -eq 0xEF -and $
 $encoding = [System.Text.UTF8Encoding]::new($hasUtf8Bom)
 $portfileContent = $encoding.GetString($portfileBytes)
 
-if ($portfileContent.Contains("# Disabled in CI to avoid MSYS2 pkgconfig acquisition") -and -not $portfileContent.Contains("vcpkg_fixup_pkgconfig()")) {
+if ($portfileContent.Contains("# vcpkg_fixup_pkgconfig() disabled in CI to avoid MSYS2 pkgconfig acquisition")) {
     Write-Host "fmt portfile already patched."
     return
 }
@@ -24,7 +24,7 @@ if ($portfileContent.Contains("# Disabled in CI to avoid MSYS2 pkgconfig acquisi
 $updatedContent = [System.Text.RegularExpressions.Regex]::Replace(
     $portfileContent,
     '(?m)^(\s*)vcpkg_fixup_pkgconfig\(\)(\r?\n?)',
-    '$1# Disabled in CI to avoid MSYS2 pkgconfig acquisition$2',
+    '$1# vcpkg_fixup_pkgconfig() disabled in CI to avoid MSYS2 pkgconfig acquisition$2',
     1
 )
 
