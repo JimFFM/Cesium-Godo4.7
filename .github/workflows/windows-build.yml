@@ -1,4 +1,4 @@
-name: Windows Double & Single Precision Builds Sep2026-v3
+name: Windows Double & Single Precision Builds Sep2026-v4
 
 on:
   push:
@@ -9,7 +9,6 @@ on:
 
 env:
   GIT_LFS_SKIP_SMUDGE: "1"
-  EZVCPKG_BASEDIR: "D:/.ezvcpkg"
 
 jobs:
   build-extension:
@@ -41,17 +40,30 @@ jobs:
         vs-version: '17.7'
         include-optional: true
 
-    - name: Inject working vcpkg commit for ezvcpkg
-      shell: bash
+    - name: Pre-setup vcpkg and patch fmt port to avoid MSYS2 error
+      shell: powershell
       run: |
-        # Target path where ezvcpkg looks for the requested commit hash
-        TARGET_DIR="D/.ezvcpkg/dbe35ceb30c688bf72e952ab23778e009a578f18"
-        mkdir -p "$TARGET_DIR"
+        $vcpkgDir = "D:\.ezvcpkg\dbe35ceb30c688bf72e952ab23778e009a578f18"
+        New-Item -ItemType Directory -Force -Path $vcpkgDir
         
-        # Clone working vcpkg commit (contains valid MSYS2 URLs) directly into ezvcpkg's expected folder
-        git clone https://github.com/microsoft/vcpkg.git "$TARGET_DIR"
-        cd "$TARGET_DIR"
-        git checkout 7c4b1265fa316d3e8e19b51cdbf3a71b2a6549c4
+        Write-Host "Cloning official vcpkg repository..."
+        git clone https://github.com/microsoft/vcpkg.git $vcpkgDir
+        
+        Set-Location $vcpkgDir
+        Write-Host "Checking out expected commit: dbe35ceb30c688bf72e952ab23778e009a578f18"
+        git checkout dbe35ceb30c688bf72e952ab23778e009a578f18
+        
+        # Patch fmt portfile to disable pkgconfig fixup which forces MSYS2 download
+        $portFile = Join-Path $vcpkgDir "ports\fmt\portfile.cmake"
+        if (Test-Path $portFile) {
+            Write-Host "Patching $portFile..."
+            $content = Get-Content $portFile -Raw
+            $newContent = $content -replace "vcpkg_fixup_pkgconfig\(\)", "# vcpkg_fixup_pkgconfig()"
+            Set-Content -Path $portFile -Value $newContent
+            Write-Host "Successfully patched fmt portfile!"
+        } else {
+            Write-Warning "fmt portfile not found at expected path."
+        }
 
     - name: Build Extension (${{ matrix.precision }} Precision)
       run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true precision=${{ matrix.precision }}
