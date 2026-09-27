@@ -1,4 +1,4 @@
-name: Windows Double & Single Precision Builds Sep2026
+name: Windows Double & Single Precision Builds Sep2026-v2
 
 on:
   push:
@@ -15,7 +15,6 @@ jobs:
     name: Build Godot3DTiles (${{ matrix.precision }} Precision)
     runs-on: windows-latest
     
-    # Run both single and double precision builds in parallel
     strategy:
       fail-fast: false
       matrix:
@@ -25,7 +24,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: recursive # Ensures godot-cpp is fetched correctly
+        submodules: recursive
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
@@ -45,8 +44,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.ezvcpkg
-        # Bumping to v2 will force a fresh download the first time it runs
-        key: ${{ runner.os }}-ezvcpkg-v2-${{ hashFiles('**/CMakeLists.txt') }}
+        key: ${{ runner.os }}-ezvcpkg-v3-${{ hashFiles('**/CMakeLists.txt') }}
 
     - name: Pre-clone and patch Cesium Native to fix vcpkg
       shell: bash
@@ -57,11 +55,10 @@ jobs:
         cd cesium_godot/native
         git checkout 9f6ae299e2709f866db52c4be29b6c31e10718c8
         
-        # Patch the ezvcpkg hash to a newer version that fixes MSYS2 404 links
-        sed -E -i 's/COMMIT "[a-f0-9]{40}"/COMMIT "7c4b1265fa316d3e8e19b51cdbf3a71b2a6549c4"/g' cmake/ezvcpkg/ezvcpkg.cmake
+        # Patch the commit hash in CMakeLists.txt to point to a working vcpkg release
+        sed -E -i 's/COMMIT "dbe35ceb30c688bf72e952ab23778e009a578f18"/COMMIT "7c4b1265fa316d3e8e19b51cdbf3a71b2a6549c4"/g' CMakeLists.txt
 
     - name: Build Extension (${{ matrix.precision }} Precision)
-      # Pass the matrix variable directly into the SCons command
       run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true precision=${{ matrix.precision }}
 
     - name: Verify Build Output
