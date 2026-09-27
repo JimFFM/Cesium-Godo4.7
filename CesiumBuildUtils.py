@@ -311,6 +311,7 @@ def compile_native(argumentsDict):
         )
     if result.returncode != 0:
         print("Error building Cesium Native: %s" % str(result.stderr))
+        exit(1)
     print("Cleaning definitions on generated files...")
     clean_cesium_definitions()
     print("Finished building Cesium Native!")
@@ -325,18 +326,8 @@ def build_native_macos():
 
 
 def build_native_win():
-    # execute MSBuild
     buildConfig: str = RELEASE_CONFIG
-    solutionName: str = "cesium-native.sln"
-    msbuildPath: str = find_ms_build()
-    if msbuildPath == "":
-        print(
-            "Could not find MSBuild.exe, make sure to have Visual Studio installed",
-            file=sys.stderr,
-        )
-        return
-    releaseConfig = "/property:Configuration=%s" % buildConfig
-    return subprocess.run([msbuildPath, solutionName, releaseConfig])
+    return subprocess.run(["cmake", "--build", ".", "--config", buildConfig])
 
 
 def clean_cesium_definitions():
