@@ -171,7 +171,7 @@ jobs:
         & "$env:GITHUB_WORKSPACE\.github\scripts\disable-vcpkg-fixup-pkgconfig.ps1" -VcpkgDir $vcpkgDir
 
     - name: Build Extension (Single Precision)
-      run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true precision=single
+      run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true
 
     - name: Verify Build Output
       run: if ((gci godot3dtiles/addons/cesium_godot/lib -Filter "*.dll").Count -lt 1) { exit 1 }
