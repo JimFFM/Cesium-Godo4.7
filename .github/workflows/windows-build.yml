@@ -42,11 +42,11 @@ jobs:
           $nativeRepo = "https://github.com/CesiumGS/cesium-native.git"
           $nativeCommit = "9f6ae299e2709f866db52c4be29b6c31e10718c8"
           if (-not (Test-Path $nativeDir)) {
-            git clone --depth=1 $nativeRepo $nativeDir
+            git clone $nativeRepo $nativeDir
           }
-          git -C $nativeDir fetch --depth=1 origin $nativeCommit
+          git -C $nativeDir fetch origin $nativeCommit
           git -C $nativeDir -c advice.detachedHead=false checkout $nativeCommit
-          git -C $nativeDir submodule update --init --recursive --depth=1
+          git -C $nativeDir submodule update --init --recursive
 
           $cmakeFile = Join-Path $nativeDir "CMakeLists.txt"
           $oldPin = "COMMIT dbe35ceb30c688bf72e952ab23778e009a578f18"
