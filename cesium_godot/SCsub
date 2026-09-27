@@ -234,7 +234,9 @@ if (os.name == cesium_build_utils.OS_WIN):
         "absl_vlog_config_internal",
         "zlib",
         "zlibstatic-ng",
-        "libmodpbase64"
+        "libmodpbase64",
+        "iphlpapi",
+        "secur32"
     ])
 elif sys.platform == cesium_build_utils.PLATFORM_MACOS:
     # Remove litehtml and gumbo from the libraries list - we'll use -force_load instead
