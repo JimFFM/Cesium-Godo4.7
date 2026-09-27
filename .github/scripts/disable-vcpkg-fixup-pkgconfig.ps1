@@ -21,7 +21,12 @@ if ($portfileContent.Contains("# Disabled in CI to avoid MSYS2 pkgconfig acquisi
     return
 }
 
-$updatedContent = $portfileContent -replace '(?m)^(\s*)vcpkg_fixup_pkgconfig\(\)\s*$', '$1# Disabled in CI to avoid MSYS2 pkgconfig acquisition'
+$updatedContent = [System.Text.RegularExpressions.Regex]::Replace(
+    $portfileContent,
+    '(?m)^(\s*)vcpkg_fixup_pkgconfig\(\)(\r?\n?)',
+    '$1# Disabled in CI to avoid MSYS2 pkgconfig acquisition$2',
+    1
+)
 
 if ($updatedContent -eq $portfileContent) {
     throw "Failed to locate vcpkg_fixup_pkgconfig() in $fmtPortfile"
