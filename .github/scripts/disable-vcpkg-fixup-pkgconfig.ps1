@@ -16,6 +16,6 @@ function(vcpkg_fixup_pkgconfig)
 endfunction()
 '@
 
-Set-Content -Path $pkgConfigScript -Value $overrideFunction
+Set-Content -Path $pkgConfigScript -Value $overrideFunction -Encoding utf8
 
 Write-Host "Successfully disabled pkgconfig fixup globally!"
