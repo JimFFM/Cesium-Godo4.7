@@ -22,6 +22,6 @@ if ($scriptContent -eq $replacementBlock -or $scriptContent -eq $replacementBloc
     return
 }
 
-[System.IO.File]::WriteAllText($pkgConfigScript, $replacementBlock, [System.Text.UTF8Encoding]::new($false))
+[System.IO.File]::WriteAllText($pkgConfigScript, $replacementBlock, $encoding)
 
 Write-Host "Successfully patched vcpkg_fixup_pkgconfig.cmake."
