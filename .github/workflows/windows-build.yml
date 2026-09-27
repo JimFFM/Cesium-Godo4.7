@@ -55,36 +55,7 @@ jobs:
         $driveRoot = [System.IO.Path]::GetPathRoot($env:GITHUB_WORKSPACE)
         $vcpkgRoot = Join-Path $driveRoot ".ezvcpkg"
         $vcpkgDir = Join-Path $vcpkgRoot $env:VCPKG_COMMIT
-        $vcpkgArchive = Join-Path $env:RUNNER_TEMP "vcpkg-$env:VCPKG_COMMIT.tar"
-        New-Item -ItemType Directory -Force -Path $vcpkgRoot | Out-Null
-
-        if (-not (Test-Path $workspaceVcpkgDir)) {
-            throw "Pinned vcpkg checkout not found at expected path: $workspaceVcpkgDir"
-        }
-
-        if (Test-Path $vcpkgDir) {
-            Remove-Item -Recurse -Force $vcpkgDir
-        }
-
-        New-Item -ItemType Directory -Force -Path $vcpkgDir | Out-Null
-        if (Test-Path $vcpkgArchive) {
-            Remove-Item -Force $vcpkgArchive
-        }
-
-        tar -cf "$vcpkgArchive" -C "$workspaceVcpkgDir" .
-        $archiveExitCode = $LASTEXITCODE
-        if ($archiveExitCode -ne 0) {
-            throw "tar archive failed with exit code $archiveExitCode"
-        }
-
-        tar -xf "$vcpkgArchive" -C "$vcpkgDir"
-        $extractExitCode = $LASTEXITCODE
-        if ($extractExitCode -ne 0) {
-            throw "tar extract failed with exit code $extractExitCode"
-        }
-        $global:LASTEXITCODE = 0
-
-        & "$env:GITHUB_WORKSPACE\.github\scripts\disable-vcpkg-fixup-pkgconfig.ps1" -VcpkgDir $vcpkgDir
+        & "$env:GITHUB_WORKSPACE\.github\scripts\stage-vcpkg-for-ezvcpkg.ps1" -SourceVcpkgDir $workspaceVcpkgDir -TargetVcpkgDir $vcpkgDir
 
     - name: Build Extension (Double Precision)
       run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true precision=double
@@ -139,36 +110,7 @@ jobs:
         $driveRoot = [System.IO.Path]::GetPathRoot($env:GITHUB_WORKSPACE)
         $vcpkgRoot = Join-Path $driveRoot ".ezvcpkg"
         $vcpkgDir = Join-Path $vcpkgRoot $env:VCPKG_COMMIT
-        $vcpkgArchive = Join-Path $env:RUNNER_TEMP "vcpkg-$env:VCPKG_COMMIT.tar"
-        New-Item -ItemType Directory -Force -Path $vcpkgRoot | Out-Null
-
-        if (-not (Test-Path $workspaceVcpkgDir)) {
-            throw "Pinned vcpkg checkout not found at expected path: $workspaceVcpkgDir"
-        }
-
-        if (Test-Path $vcpkgDir) {
-            Remove-Item -Recurse -Force $vcpkgDir
-        }
-
-        New-Item -ItemType Directory -Force -Path $vcpkgDir | Out-Null
-        if (Test-Path $vcpkgArchive) {
-            Remove-Item -Force $vcpkgArchive
-        }
-
-        tar -cf "$vcpkgArchive" -C "$workspaceVcpkgDir" .
-        $archiveExitCode = $LASTEXITCODE
-        if ($archiveExitCode -ne 0) {
-            throw "tar archive failed with exit code $archiveExitCode"
-        }
-
-        tar -xf "$vcpkgArchive" -C "$vcpkgDir"
-        $extractExitCode = $LASTEXITCODE
-        if ($extractExitCode -ne 0) {
-            throw "tar extract failed with exit code $extractExitCode"
-        }
-        $global:LASTEXITCODE = 0
-
-        & "$env:GITHUB_WORKSPACE\.github\scripts\disable-vcpkg-fixup-pkgconfig.ps1" -VcpkgDir $vcpkgDir
+        & "$env:GITHUB_WORKSPACE\.github\scripts\stage-vcpkg-for-ezvcpkg.ps1" -SourceVcpkgDir $workspaceVcpkgDir -TargetVcpkgDir $vcpkgDir
 
     - name: Build Extension (Single Precision)
       run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true
