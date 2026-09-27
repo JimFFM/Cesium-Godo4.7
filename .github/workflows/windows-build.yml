@@ -1,4 +1,4 @@
-name: Windows Double & Single Precision Builds Sep2026-v4
+name: Windows Double & Single Precision Builds Sep2026-v5
 
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
         vs-version: '17.7'
         include-optional: true
 
-    - name: Pre-setup vcpkg and patch fmt port to avoid MSYS2 error
+    - name: Pre-setup vcpkg and globally disable MSYS2 pkgconfig fixups
       shell: powershell
       run: |
         $vcpkgDir = "D:\.ezvcpkg\dbe35ceb30c688bf72e952ab23778e009a578f18"
@@ -53,16 +53,14 @@ jobs:
         Write-Host "Checking out expected commit: dbe35ceb30c688bf72e952ab23778e009a578f18"
         git checkout dbe35ceb30c688bf72e952ab23778e009a578f18
         
-        # Patch fmt portfile to disable pkgconfig fixup which forces MSYS2 download
-        $portFile = Join-Path $vcpkgDir "ports\fmt\portfile.cmake"
-        if (Test-Path $portFile) {
-            Write-Host "Patching $portFile..."
-            $content = Get-Content $portFile -Raw
-            $newContent = $content -replace "vcpkg_fixup_pkgconfig\(\)", "# vcpkg_fixup_pkgconfig()"
-            Set-Content -Path $portFile -Value $newContent
-            Write-Host "Successfully patched fmt portfile!"
+        # Globally neutralize vcpkg_fixup_pkgconfig to prevent ANY package from triggering MSYS2 downloads
+        $pkgConfigScript = Join-Path$vcpkgDir "scripts\cmake\vcpkg_fixup_pkgconfig.cmake"
+        if (Test-Path $pkgConfigScript) {
+            Write-Host "Globally bypassing vcpkg_fixup_pkgconfig in $pkgConfigScript..."
+            Set-Content -Path $pkgConfigScript -Value "function(vcpkg_fixup_pkgconfig)%`nendfunction()%`n"
+            Write-Host "Successfully disabled pkgconfig fixup globally!"
         } else {
-            Write-Warning "fmt portfile not found at expected path."
+            Write-Warning "vcpkg_fixup_pkgconfig.cmake not found at expected path."
         }
 
     - name: Build Extension (${{ matrix.precision }} Precision)
@@ -76,4 +74,3 @@ jobs:
       with:
         name: godot3dtiles-${{ matrix.precision }}-precision-dev
         path: godot3dtiles/
-
