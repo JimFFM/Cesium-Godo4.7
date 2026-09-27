@@ -45,20 +45,21 @@ jobs:
     - name: Pre-setup vcpkg and globally disable MSYS2 pkgconfig fixups
       shell: powershell
       run: |
+        $vcpkgCommit = "dbe35ceb30c688bf72e952ab23778e009a578f18"
         $vcpkgRoot = Join-Path $env:USERPROFILE ".ezvcpkg"
-        $vcpkgDir = Join-Path $vcpkgRoot "${{ matrix.precision }}-dbe35ceb30c688bf72e952ab23778e009a578f18"
+        $vcpkgDir = Join-Path $vcpkgRoot "${{ matrix.precision }}-$vcpkgCommit"
         New-Item -ItemType Directory -Force -Path $vcpkgRoot | Out-Null
 
         if (Test-Path $vcpkgDir) {
             Remove-Item -Recurse -Force $vcpkgDir
         }
 
-        Write-Host "Cloning official vcpkg repository..."
-        git clone https://github.com/microsoft/vcpkg.git $vcpkgDir
-
+        Write-Host "Fetching pinned vcpkg commit: $vcpkgCommit"
+        git init $vcpkgDir
         Set-Location $vcpkgDir
-        Write-Host "Checking out expected commit: dbe35ceb30c688bf72e952ab23778e009a578f18"
-        git checkout dbe35ceb30c688bf72e952ab23778e009a578f18
+        git remote add origin https://github.com/microsoft/vcpkg.git
+        git fetch --depth 1 origin $vcpkgCommit
+        git checkout FETCH_HEAD
 
         # Globally neutralize vcpkg_fixup_pkgconfig to prevent ANY package from triggering MSYS2 downloads
         $pkgConfigScript = "$vcpkgDir\scripts\cmake\vcpkg_fixup_pkgconfig.cmake"
