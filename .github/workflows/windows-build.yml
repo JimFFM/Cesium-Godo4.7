@@ -69,13 +69,13 @@ jobs:
             Remove-Item -Force $vcpkgArchive
         }
 
-        tar -cf $vcpkgArchive -C $workspaceVcpkgDir .
+        tar -cf "$vcpkgArchive" -C "$workspaceVcpkgDir" .
         $archiveExitCode = $LASTEXITCODE
         if ($archiveExitCode -ne 0) {
             throw "tar archive failed with exit code $archiveExitCode"
         }
 
-        tar -xf $vcpkgArchive -C $vcpkgDir
+        tar -xf "$vcpkgArchive" -C "$vcpkgDir"
         $extractExitCode = $LASTEXITCODE
         if ($extractExitCode -ne 0) {
             throw "tar extract failed with exit code $extractExitCode"
@@ -151,13 +151,13 @@ jobs:
             Remove-Item -Force $vcpkgArchive
         }
 
-        tar -cf $vcpkgArchive -C $workspaceVcpkgDir .
+        tar -cf "$vcpkgArchive" -C "$workspaceVcpkgDir" .
         $archiveExitCode = $LASTEXITCODE
         if ($archiveExitCode -ne 0) {
             throw "tar archive failed with exit code $archiveExitCode"
         }
 
-        tar -xf $vcpkgArchive -C $vcpkgDir
+        tar -xf "$vcpkgArchive" -C "$vcpkgDir"
         $extractExitCode = $LASTEXITCODE
         if ($extractExitCode -ne 0) {
             throw "tar extract failed with exit code $extractExitCode"
