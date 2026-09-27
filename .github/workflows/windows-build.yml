@@ -1,4 +1,4 @@
-name: Windows Double & Single Precision Builds Sep2026-v2
+name: Windows Double & Single Precision Builds Sep2026-v3
 
 on:
   push:
@@ -9,6 +9,7 @@ on:
 
 env:
   GIT_LFS_SKIP_SMUDGE: "1"
+  EZVCPKG_BASEDIR: "D:/.ezvcpkg"
 
 jobs:
   build-extension:
@@ -40,23 +41,17 @@ jobs:
         vs-version: '17.7'
         include-optional: true
 
-    - name: Cache ezvcpkg
-      uses: actions/cache@v4
-      with:
-        path: ~/.ezvcpkg
-        key: ${{ runner.os }}-ezvcpkg-v3-${{ hashFiles('**/CMakeLists.txt') }}
-
-    - name: Pre-clone and patch Cesium Native to fix vcpkg
+    - name: Inject working vcpkg commit for ezvcpkg
       shell: bash
       run: |
-        # Pre-clone the commit that build.py expects so build.py skips cloning
-        mkdir -p cesium_godot/native
-        git clone https://github.com/CesiumGS/cesium-native.git cesium_godot/native
-        cd cesium_godot/native
-        git checkout 9f6ae299e2709f866db52c4be29b6c31e10718c8
+        # Target path where ezvcpkg looks for the requested commit hash
+        TARGET_DIR="D/.ezvcpkg/dbe35ceb30c688bf72e952ab23778e009a578f18"
+        mkdir -p "$TARGET_DIR"
         
-        # Patch the commit hash in CMakeLists.txt to point to a working vcpkg release
-        sed -E -i 's/COMMIT "dbe35ceb30c688bf72e952ab23778e009a578f18"/COMMIT "7c4b1265fa316d3e8e19b51cdbf3a71b2a6549c4"/g' CMakeLists.txt
+        # Clone working vcpkg commit (contains valid MSYS2 URLs) directly into ezvcpkg's expected folder
+        git clone https://github.com/microsoft/vcpkg.git "$TARGET_DIR"
+        cd "$TARGET_DIR"
+        git checkout 7c4b1265fa316d3e8e19b51cdbf3a71b2a6549c4
 
     - name: Build Extension (${{ matrix.precision }} Precision)
       run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true precision=${{ matrix.precision }}
@@ -69,3 +64,4 @@ jobs:
       with:
         name: godot3dtiles-${{ matrix.precision }}-precision-dev
         path: godot3dtiles/
+
