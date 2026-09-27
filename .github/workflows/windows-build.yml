@@ -30,7 +30,7 @@ jobs:
       with:
         repository: microsoft/vcpkg
         ref: ${{ env.VCPKG_COMMIT }}
-        path: .ezvcpkg/${{ env.VCPKG_COMMIT }}
+        path: .copilot-vcpkg/${{ env.VCPKG_COMMIT }}
         fetch-depth: 1
         persist-credentials: false
         submodules: false
@@ -51,7 +51,7 @@ jobs:
     - name: Pre-setup vcpkg and patch fmt port to skip pkgconfig fixup
       shell: powershell
       run: |
-        $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".ezvcpkg\$env:VCPKG_COMMIT"
+        $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".copilot-vcpkg\$env:VCPKG_COMMIT"
         $driveRoot = [System.IO.Path]::GetPathRoot($env:GITHUB_WORKSPACE)
         $vcpkgRoot = Join-Path $driveRoot ".ezvcpkg"
         $vcpkgDir = Join-Path $vcpkgRoot $env:VCPKG_COMMIT
@@ -85,7 +85,7 @@ jobs:
       with:
         repository: microsoft/vcpkg
         ref: ${{ env.VCPKG_COMMIT }}
-        path: .ezvcpkg/${{ env.VCPKG_COMMIT }}
+        path: .copilot-vcpkg/${{ env.VCPKG_COMMIT }}
         fetch-depth: 1
         persist-credentials: false
         submodules: false
@@ -106,7 +106,7 @@ jobs:
     - name: Pre-setup vcpkg and patch fmt port to skip pkgconfig fixup
       shell: powershell
       run: |
-        $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".ezvcpkg\$env:VCPKG_COMMIT"
+        $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".copilot-vcpkg\$env:VCPKG_COMMIT"
         $driveRoot = [System.IO.Path]::GetPathRoot($env:GITHUB_WORKSPACE)
         $vcpkgRoot = Join-Path $driveRoot ".ezvcpkg"
         $vcpkgDir = Join-Path $vcpkgRoot $env:VCPKG_COMMIT
