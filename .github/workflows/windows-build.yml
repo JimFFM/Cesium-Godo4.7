@@ -1,4 +1,4 @@
-name: Windows Double & Single Precision Builds Sep2026-v6
+name: Windows Double & Single Precision Builds Sep2026-v7
 
 on:
   push:
@@ -54,13 +54,12 @@ jobs:
         git checkout dbe35ceb30c688bf72e952ab23778e009a578f18
         
         # Globally neutralize vcpkg_fixup_pkgconfig to prevent ANY package from triggering MSYS2 downloads
-        # Using string interpolation instead of Join-Path to avoid YAML string escaping issues
         $pkgConfigScript = "$vcpkgDir\scripts\cmake\vcpkg_fixup_pkgconfig.cmake"
         
         if (Test-Path $pkgConfigScript) {
             Write-Host "Globally bypassing vcpkg_fixup_pkgconfig in $pkgConfigScript..."
-            # Replace the file content with an empty CMake function
             $overrideFunction = "function(vcpkg_fixup_pkgconfig)`nendfunction()`n"
+            # Fixed space between -Value and the variable
             Set-Content -Path $pkgConfigScript -Value$overrideFunction
             Write-Host "Successfully disabled pkgconfig fixup globally!"
         } else {
