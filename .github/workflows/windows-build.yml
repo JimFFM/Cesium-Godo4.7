@@ -48,18 +48,32 @@ jobs:
         $vcpkgCommit = "dbe35ceb30c688bf72e952ab23778e009a578f18"
         $vcpkgRoot = Join-Path $env:USERPROFILE ".ezvcpkg"
         $vcpkgDir = Join-Path $vcpkgRoot "${{ matrix.precision }}-$vcpkgCommit"
+        $archivePath = Join-Path $env:RUNNER_TEMP "${{ matrix.precision }}-$vcpkgCommit.zip"
+        $extractRoot = Join-Path $env:RUNNER_TEMP "${{ matrix.precision }}-vcpkg-extract"
         New-Item -ItemType Directory -Force -Path $vcpkgRoot | Out-Null
 
         if (Test-Path $vcpkgDir) {
             Remove-Item -Recurse -Force $vcpkgDir
         }
 
-        Write-Host "Fetching pinned vcpkg commit: $vcpkgCommit"
-        git init $vcpkgDir
-        Set-Location $vcpkgDir
-        git remote add origin https://github.com/microsoft/vcpkg.git
-        git fetch --depth 1 origin $vcpkgCommit
-        git checkout FETCH_HEAD
+        if (Test-Path $archivePath) {
+            Remove-Item -Force $archivePath
+        }
+
+        if (Test-Path $extractRoot) {
+            Remove-Item -Recurse -Force $extractRoot
+        }
+
+        Write-Host "Downloading pinned vcpkg archive for commit: $vcpkgCommit"
+        Invoke-WebRequest -Uri "https://github.com/microsoft/vcpkg/archive/$vcpkgCommit.zip" -OutFile $archivePath
+        Expand-Archive -Path $archivePath -DestinationPath $extractRoot
+
+        $expandedDir = Get-ChildItem -Path $extractRoot -Directory | Select-Object -First 1
+        if (-not $expandedDir) {
+            throw "Failed to extract vcpkg archive from $archivePath"
+        }
+
+        Move-Item -Path $expandedDir.FullName -Destination $vcpkgDir
 
         & "$env:GITHUB_WORKSPACE\.github\scripts\disable-vcpkg-fixup-pkgconfig.ps1" -VcpkgDir $vcpkgDir
 
