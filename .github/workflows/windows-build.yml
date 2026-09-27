@@ -1,4 +1,4 @@
-name: Windows Double & Single Precision Builds
+name: Windows Double & Single Precision Builds v8
 
 on:
   push:
@@ -7,12 +7,11 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 env:
   GIT_LFS_SKIP_SMUDGE: "1"
-  VCPKG_COMMIT: dbe35ceb30c688bf72e952ab23778e009a578f18
+  VCPKG_DEFAULT_TRIPLET: x64-windows-static
+  VCPKG_ROOT: ${{ github.workspace }}\vcpkg
+  VCPKG_FORCE_SYSTEM_BINARIES: "1"
 
 jobs:
   double:
@@ -20,54 +19,46 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        submodules: false
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
-    - name: Checkout pinned vcpkg source
-      uses: actions/checkout@v4
-      with:
-        repository: microsoft/vcpkg
-        ref: ${{ env.VCPKG_COMMIT }}
-        path: .copilot-vcpkg/${{ env.VCPKG_COMMIT }}
-        fetch-depth: 1
-        persist-credentials: false
-        submodules: false
+      - name: Refresh vcpkg / submodules
+        shell: pwsh
+        run: |
+          git submodule update --init --recursive
+          if (Test-Path "vcpkg") {
+            git -C vcpkg fetch --all --tags
+            git -C vcpkg pull --ff-only
+          }
 
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
 
-    - name: Install SCons
-      run: pip install scons
+      - name: Install SCons
+        run: pip install scons
 
-    - name: Setup MSVC 2022
-      uses: microsoft/setup-msbuild@v1.3
-      with:
-        vs-version: '17.7'
+      - name: Setup MSVC 2022
+        uses: microsoft/setup-msbuild@v1.3
+        with:
+          vs-version: '17.7'
+          include-optional: true
 
-    - name: Pre-setup vcpkg and globally disable pkgconfig fixup
-      shell: powershell
-      run: |
-        $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".copilot-vcpkg\$env:VCPKG_COMMIT"
-        $driveRoot = [System.IO.Path]::GetPathRoot($env:GITHUB_WORKSPACE)
-        $vcpkgRoot = Join-Path $driveRoot ".ezvcpkg"
-        $vcpkgDir = Join-Path $vcpkgRoot $env:VCPKG_COMMIT
-        & "$env:GITHUB_WORKSPACE\.github\scripts\stage-vcpkg-for-ezvcpkg.ps1" -SourceVcpkgDir $workspaceVcpkgDir -TargetVcpkgDir $vcpkgDir
+      - name: Build Extension (Double Precision Debug)
+        run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true precision=double
 
-    - name: Build Extension (Double Precision)
-      run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true precision=double
+      - name: Verify Build Output
+        run: if ((gci godot3dtiles/addons/cesium_godot/lib -Filter "*.dll").Count -lt 1) { exit 1 }
 
-    - name: Verify Build Output
-      run: if ((gci godot3dtiles/addons/cesium_godot/lib -Filter "*.dll").Count -lt 1) { exit 1 }
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: godot3dtiles-double-precision-dev
-        path: godot3dtiles/
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot3dtiles-double-precision-dev
+          path: godot3dtiles/
 
   single:
     name: Build Godot3DTiles Extension (Single Precision)
@@ -75,51 +66,43 @@ jobs:
     needs: double
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        submodules: false
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
-    - name: Checkout pinned vcpkg source
-      uses: actions/checkout@v4
-      with:
-        repository: microsoft/vcpkg
-        ref: ${{ env.VCPKG_COMMIT }}
-        path: .copilot-vcpkg/${{ env.VCPKG_COMMIT }}
-        fetch-depth: 1
-        persist-credentials: false
-        submodules: false
+      - name: Refresh vcpkg / submodules
+        shell: pwsh
+        run: |
+          git submodule update --init --recursive
+          if (Test-Path "vcpkg") {
+            git -C vcpkg fetch --all --tags
+            git -C vcpkg pull --ff-only
+          }
 
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
 
-    - name: Install SCons
-      run: pip install scons
+      - name: Install SCons
+        run: pip install scons
 
-    - name: Setup MSVC 2022
-      uses: microsoft/setup-msbuild@v1.3
-      with:
-        vs-version: '17.7'
+      - name: Setup MSVC 2022
+        uses: microsoft/setup-msbuild@v1.3
+        with:
+          vs-version: '17.7'
+          include-optional: true
 
-    - name: Pre-setup vcpkg and globally disable pkgconfig fixup
-      shell: powershell
-      run: |
-        $workspaceVcpkgDir = Join-Path $env:GITHUB_WORKSPACE ".copilot-vcpkg\$env:VCPKG_COMMIT"
-        $driveRoot = [System.IO.Path]::GetPathRoot($env:GITHUB_WORKSPACE)
-        $vcpkgRoot = Join-Path $driveRoot ".ezvcpkg"
-        $vcpkgDir = Join-Path $vcpkgRoot $env:VCPKG_COMMIT
-        & "$env:GITHUB_WORKSPACE\.github\scripts\stage-vcpkg-for-ezvcpkg.ps1" -SourceVcpkgDir $workspaceVcpkgDir -TargetVcpkgDir $vcpkgDir
+      - name: Build Extension (Single Precision Debug)
+        run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true
 
-    - name: Build Extension (Single Precision)
-      run: scons platform=windows arch=x64 compileTarget=extension target=template_release buildCesium=true
+      - name: Verify Build Output
+        run: if ((gci godot3dtiles/addons/cesium_godot/lib -Filter "*.dll").Count -lt 1) { exit 1 }
 
-    - name: Verify Build Output
-      run: if ((gci godot3dtiles/addons/cesium_godot/lib -Filter "*.dll").Count -lt 1) { exit 1 }
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: godot3dtiles-single-precision-dev
-        path: godot3dtiles/
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot3dtiles-single-precision-dev
+          path: godot3dtiles/
